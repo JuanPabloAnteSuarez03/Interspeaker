@@ -1,0 +1,44 @@
+services:
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: interspeaker-backend-dev
+    ports:
+      - "5100:5000"
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - PYTHONUNBUFFERED=1
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS:-}
+    volumes:
+      - ./Backend:/app
+    command: flask run --host=0.0.0.0 --port=5000 --reload
+    restart: unless-stopped
+    networks:
+      - interspeaker-network
+
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile.dev
+    container_name: interspeaker-frontend-dev
+    ports:
+      - "3100:3000"
+    environment:
+      - VITE_API_URL=http://localhost:5100
+    volumes:
+      - ./Frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0 --port 3000
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - interspeaker-network
+
+networks:
+  interspeaker-network:
+    driver: bridge

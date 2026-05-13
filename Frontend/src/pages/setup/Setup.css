@@ -1,0 +1,27 @@
+.setup {
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.setup label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.setup select,
+.setup button {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+}
+
+.setup button {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}

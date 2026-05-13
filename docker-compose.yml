@@ -1,0 +1,42 @@
+services:
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: interspeaker-backend
+    ports:
+      - "5100:5000"
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS:-}
+    restart: unless-stopped
+    networks:
+      - interspeaker-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5100}
+    container_name: interspeaker-frontend
+    ports:
+      - "3100:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - interspeaker-network
+
+networks:
+  interspeaker-network:
+    driver: bridge
