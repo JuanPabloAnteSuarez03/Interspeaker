@@ -11,9 +11,28 @@ except ImportError:  # pragma: no cover
 MODEL_NAME = "gemini-2.5-flash"
 
 
+def _stub_mode() -> bool:
+    """No llamar a la API en tests/CI salvo opt-in explicito."""
+    if os.getenv("SKIP_GEMINI", "").strip().lower() in ("1", "true", "yes"):
+        return True
+    if os.getenv("GEMINI_LIVE_IN_CI", "").strip().lower() in ("1", "true", "yes"):
+        return False
+    if os.getenv("GITHUB_ACTIONS", "").strip().lower() == "true":
+        return True
+    key = (os.getenv("GEMINI_API_KEY") or "").strip()
+    if not key:
+        return True
+    low = key.lower()
+    if low.startswith("dummy") or "dummy_key" in low:
+        return True
+    return False
+
+
 def _get_model():
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key or genai is None:
+    if _stub_mode() or genai is None:
+        return None
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not api_key:
         return None
     genai.configure(api_key=api_key)
     return genai.GenerativeModel(MODEL_NAME)

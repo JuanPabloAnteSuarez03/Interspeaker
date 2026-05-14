@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import './Interview.css'
 
 function Interview() {
-  const [question, setQuestion] = useState('Cargando primera pregunta...')
+  const [question, _setQuestion] = useState('Cargando primera pregunta...')
   const [recording, setRecording] = useState(false)
 
   useEffect(() => {
