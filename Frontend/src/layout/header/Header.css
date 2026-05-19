@@ -1,20 +1,109 @@
+/* ===== HEADER ===== */
 .app-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
-  border-bottom: 1px solid #e5e5e5;
+  padding: 0 32px;
+  height: 60px;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
+/* ===== BRAND ===== */
 .brand {
-  font-weight: 700;
-  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   text-decoration: none;
-  color: inherit;
+  color: #1e3a8a;
+  font-weight: 700;
+  font-size: 1.05rem;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  letter-spacing: -0.3px;
+  flex-shrink: 0;
 }
 
-.nav a {
-  margin-left: 16px;
+.brand:hover {
+  opacity: 0.85;
+}
+
+/* ===== NAV ===== */
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nav-link {
+  position: relative;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #4b5563;
   text-decoration: none;
-  color: #333;
+  font-family: system-ui, sans-serif;
+  transition: color 0.18s ease, background 0.18s ease;
+}
+
+.nav-link:hover {
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
+.nav-link--active {
+  color: #1d4ed8 !important;
+  background: #dbeafe;
+  font-weight: 600;
+}
+
+/* ===== ACCIONES DERECHA ===== */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.btn-signout {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1.5px solid #e5e7eb;
+  background: transparent;
+  color: #374151;
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: system-ui, sans-serif;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.btn-signout:hover {
+  border-color: #fca5a5;
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 640px) {
+  .app-header {
+    padding: 0 16px;
+  }
+
+  .nav {
+    gap: 0;
+  }
+
+  .nav-link {
+    padding: 6px 10px;
+    font-size: 0.82rem;
+  }
+
+  .btn-signout {
+    font-size: 0.82rem;
+    padding: 6px 10px;
+  }
 }
