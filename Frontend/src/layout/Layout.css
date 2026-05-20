@@ -6,5 +6,10 @@
 
 .layout-main {
   flex: 1;
-  padding: 24px;
+}
+
+.layout-main--login {
+  padding: 0;
+  overflow: hidden;
+  height: 100vh;
 }
