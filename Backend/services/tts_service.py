@@ -1,30 +1,29 @@
-"""Servicio Text-to-Speech usando Google Cloud Text-to-Speech."""
+"""Servicio Text-to-Speech usando Deepgram Aura."""
 
 import os
+import logging
+import requests
 
-try:
-    from google.cloud import texttospeech
-except ImportError:  # pragma: no cover
-    texttospeech = None
+logger = logging.getLogger(__name__)
 
-
-def synthesize_speech(text: str, voice: str = "es-ES-Standard-A") -> bytes:
-    """Convierte texto en audio MP3."""
-    if texttospeech is None or not os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
+def synthesize_speech(text: str, voice: str = "aura-2-diana-es") -> bytes:
+    """Convierte texto en audio MP3 usando Deepgram."""
+    api_key = os.getenv("DEEPGRAM_API_KEY")
+    if not api_key:
+        logger.error("DEEPGRAM_API_KEY no configurada. TTS abortado.")
         return b""
 
-    client = texttospeech.TextToSpeechClient()
-    synthesis_input = texttospeech.SynthesisInput(text=text)
-    voice_params = texttospeech.VoiceSelectionParams(
-        language_code=voice.rsplit("-", 1)[0],
-        name=voice,
-    )
-    audio_config = texttospeech.AudioConfig(
-        audio_encoding=texttospeech.AudioEncoding.MP3,
-    )
-    response = client.synthesize_speech(
-        input=synthesis_input,
-        voice=voice_params,
-        audio_config=audio_config,
-    )
-    return response.audio_content
+    url = f"https://api.deepgram.com/v1/speak?model={voice}&encoding=mp3"
+    headers = {
+        "Authorization": f"Token {api_key}",
+        "Content-Type": "application/json"
+    }
+    payload = {"text": text}
+
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=10)
+        response.raise_for_status()
+        return response.content
+    except Exception as exc:
+        logger.exception(f"Error generando TTS con Deepgram: {exc}")
+        return b""
