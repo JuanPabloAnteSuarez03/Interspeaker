@@ -1,5 +1,8 @@
+from dotenv import load_dotenv
 from flask import Flask, jsonify
 from flask_cors import CORS
+
+load_dotenv()
 
 from routes.interview import interview_bp
 from routes.stt import stt_bp
@@ -41,8 +44,14 @@ def create_app():
                 "/api/interview/next": {
                     "post": {"summary": "Genera la siguiente pregunta segun el contexto"}
                 },
+                "/api/stt/status": {
+                    "get": {"summary": "Estado de la integracion Google Cloud STT"}
+                },
                 "/api/stt/transcribe": {
                     "post": {"summary": "Transcribe audio del usuario a texto"}
+                },
+                "/api/stt/transcripts/{session_id}": {
+                    "get": {"summary": "Lista transcripciones temporales de la sesion"}
                 },
                 "/api/tts/synthesize": {
                     "post": {"summary": "Convierte texto en audio (voz del entrevistador)"}
