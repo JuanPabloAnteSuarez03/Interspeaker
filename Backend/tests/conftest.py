@@ -5,6 +5,9 @@ import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+os.environ.setdefault("SKIP_STT", "1")
+os.environ.setdefault("SKIP_GEMINI", "1")
+
 from app import create_app
 
 
