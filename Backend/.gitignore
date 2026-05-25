@@ -20,3 +20,5 @@ coverage.xml
 htmlcov/
 
 *.log
+
+interspeaker.json
