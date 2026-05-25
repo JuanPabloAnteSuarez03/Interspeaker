@@ -6,6 +6,7 @@ __pycache__/
 build/
 dist/
 *.egg-info/
+.venv/
 venv/
 env/
 ENV/
@@ -14,6 +15,7 @@ ENV/
 .env.local
 
 .pytest_cache/
+pytest-cache-files-*/
 .coverage
 .coverage.*
 coverage.xml
