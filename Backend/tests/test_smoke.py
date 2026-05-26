@@ -25,8 +25,12 @@ def test_stt_missing_audio(client):
     assert client.post("/api/stt/transcribe").status_code == 400
 
 
+def test_stt_status(client):
+    assert client.get("/api/stt/status").status_code == 200
+
+
 def test_stt_stub_transcript(client):
-    data = {"audio": (io.BytesIO(b"x"), "a.wav")}
+    data = {"audio": (io.BytesIO(b"x" * 600), "answer.webm")}
     r = client.post("/api/stt/transcribe", data=data, content_type="multipart/form-data")
     assert r.status_code == 200
     assert "transcript" in r.get_json()

@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import './Interview.css'
 
+
+const LEVELS = ['Sin experiencia', '1 - 2 años', '3 - 5 años', ' 6+ años']
+
+/* ─── Interview questions (could later be dynamic based on area/level) ── */
 const QUESTIONS = [
   'Cuéntame sobre tu experiencia con React y cómo manejas el estado en aplicaciones grandes.',
   '¿Cómo optimizarías el rendimiento de un componente que se re-renderiza con frecuencia?',
@@ -9,14 +13,28 @@ const QUESTIONS = [
   'Describe tu experiencia con arquitecturas de micro-frontends.',
 ]
 
+/* ═══════════════════════════════════════════════════════════════════════ */
 export default function Interview() {
-  const [questionIndex, setQuestionIndex] = useState(0)
-  const [phase, setPhase] = useState('listening') // listening | speaking | processing
-  const [recording, setRecording] = useState(false)
-  const [paused, setPaused] = useState(false)
+  /* step: 'setup' | 'interview' */
+  const [step, setStep] = useState('setup')
 
-  const total = QUESTIONS.length
-  const current = questionIndex + 1
+  /* Setup state */
+  const [name, setName]   = useState('')
+  const [area, setArea]   = useState('frontend')
+  const [level, setLevel] = useState('Mid-Level')
+  const [voiceHint, setVoiceHint] = useState(false)
+
+  /* Interview state */
+  const [questionIndex, setQuestionIndex] = useState(0)
+  const [phase, setPhase]     = useState('listening') // listening | speaking | processing
+  const [recording, setRecording] = useState(false)
+  const [paused, setPaused]   = useState(false)
+
+  /* ── Handlers ── */
+  const handleStart = () => {
+    sessionStorage.setItem('interview-config', JSON.stringify({ name, area, level }))
+    setStep('interview')
+  }
 
   const handleMic = () => {
     if (phase === 'listening') {
@@ -26,7 +44,7 @@ export default function Interview() {
       setRecording(false)
       setPhase('processing')
       setTimeout(() => {
-        if (questionIndex < total - 1) {
+        if (questionIndex < QUESTIONS.length - 1) {
           setQuestionIndex((i) => i + 1)
           setPhase('listening')
         } else {
@@ -36,15 +54,91 @@ export default function Interview() {
     }
   }
 
+  /* ── Render ── */
+  if (step === 'setup') return <SetupStep {...{ name, setName, area, setArea, level, setLevel, voiceHint, setVoiceHint, handleStart }} />
+  return <InterviewStep {...{ questionIndex, phase, recording, paused, setPaused, handleMic }} />
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SETUP STEP
+═══════════════════════════════════════════════════════════════════════ */
+function SetupStep({ name, setName, area, setArea, level, setLevel, voiceHint, setVoiceHint, handleStart }) {
+  return (
+    <div className="sp-wrapper">
+      <div className="sp-card">
+        <div className="sp-right">
+          <div className="sp-field">
+            <label className="sp-label">Nombre completo</label>
+            <div className="sp-input-wrap">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="sp-input-icon">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="#94a3b8" strokeWidth="1.8" strokeLinecap="round"/>
+                <circle cx="12" cy="7" r="4" stroke="#94a3b8" strokeWidth="1.8"/>
+              </svg>
+              <input
+                className="sp-input"
+                type="text"
+                placeholder="Ej. Ana García"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="sp-field">
+            <label className="sp-label">Puesto deseado</label>
+            <div className="sp-input-wrap">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="sp-input-icon">
+                <polyline points="16 18 22 12 16 6" stroke="#94a3b8" strokeWidth="1.8" strokeLinecap="round"/>
+                <polyline points="8 6 2 12 8 18" stroke="#94a3b8" strokeWidth="1.8" strokeLinecap="round"/>
+              </svg>
+              <input
+                className="sp-input"
+                type="text"
+                placeholder="Ej. Desarrollador Frontend"
+                value={area}
+                onChange={(e) => setArea(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="sp-field">
+            <label className="sp-label">Nivel de experiencia</label>
+            <div className="sp-level-group">
+              {LEVELS.map((l) => (
+                <button
+                  key={l}
+                  className={`sp-level-btn ${level === l ? 'sp-level-btn--active' : ''}`}
+                  onClick={() => setLevel(l)}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button className="sp-start-btn" onClick={handleStart}>
+            Comenzar Entrevista
+          </button>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
+function InterviewStep({ questionIndex, phase, recording, paused, setPaused, handleMic }) {
+  const total   = QUESTIONS.length
+  const current = questionIndex + 1
+
   const phaseLabel = {
-    listening: 'Escuchando pregunta...',
-    speaking: 'Grabando tu respuesta...',
+    listening:  'Escuchando pregunta...',
+    speaking:   'Grabando tu respuesta...',
     processing: 'Procesando respuesta...',
   }
 
   const phaseHint = {
-    listening: 'El entrevistador IA está procesando tu currículum para formular la siguiente pregunta técnica.',
-    speaking: 'Habla con claridad. Pulsa de nuevo para detener la grabación.',
+    listening:  'El entrevistador IA está procesando tu currículum para formular la siguiente pregunta técnica.',
+    speaking:   'Habla con claridad. Pulsa de nuevo para detener la grabación.',
     processing: 'Analizando tu respuesta con IA...',
   }
 
