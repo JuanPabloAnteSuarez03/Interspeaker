@@ -1,4 +1,185 @@
-/* ===== WRAPPER ===== */
+/* ================================================================
+   SETUP STEP styles  (formerly Setup.css)
+================================================================ */
+
+.sp-wrapper {
+  min-height: calc(100vh - 60px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f4f8;
+  padding: 32px 24px;
+  font-family: system-ui, sans-serif;
+}
+
+.sp-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 28px;
+  width: 100%;
+  max-width: 760px;
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(30,58,138,0.08);
+  animation: spIn 0.45s ease both;
+}
+
+@keyframes spIn {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+g {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px solid rgba(30,58,138,0.12);
+  animation: ringPulse 3s ease-in-out infinite;
+}
+
+
+.sp-right {
+  flex: 1;
+  padding: 44px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  justify-content: center;
+}
+
+/* FIELDS */
+.sp-field { display: flex; flex-direction: column; gap: 7px; }
+
+.sp-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.sp-input-wrap,
+.sp-select-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.sp-input-icon { position: absolute; left: 12px; pointer-events: none; }
+
+.sp-input {
+  width: 100%;
+  padding: 11px 14px 11px 36px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  color: #1e293b;
+  background: #f8fafc;
+  font-family: system-ui, sans-serif;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+}
+
+.sp-input:focus {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(147,197,253,0.25);
+  background: #fff;
+}
+
+.sp-input::placeholder { color: #94a3b8; }
+
+.sp-select-wrap { position: relative; }
+
+.sp-select {
+  width: 100%;
+  padding: 11px 36px 11px 36px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  color: #1e293b;
+  background: #f8fafc;
+  font-family: system-ui, sans-serif;
+  appearance: none;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.sp-select:focus {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(147,197,253,0.25);
+  background: #fff;
+}
+
+.sp-select-chevron { position: absolute; right: 12px; pointer-events: none; }
+
+/* LEVELS */
+.sp-level-group { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.sp-level-btn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1.5px solid #e2e8f0;
+  background: transparent;
+  color: #374151;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: system-ui, sans-serif;
+}
+
+.sp-level-btn:hover { border-color: #93c5fd; color: #1d4ed8; }
+
+.sp-level-btn--active {
+  background: #06b6d4;
+  border-color: #06b6d4;
+  color: #fff;
+  font-weight: 700;
+}
+
+/* START BTN */
+.sp-start-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: #1e3a8a;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: system-ui, sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(30,58,138,0.28);
+  margin-top: 4px;
+}
+
+.sp-start-btn:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(30,58,138,0.35);
+}
+
+/* RESPONSIVE — setup */
+@media (max-width: 640px) {
+  .sp-card { flex-direction: column; }
+
+  .sp-left {
+    flex: none;
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 32px 24px;
+  }
+
+  .sp-divider-wrap { flex-direction: row; padding: 4px 0; }
+  .sp-divider-line  { width: auto; height: 1px; flex: 1; }
+  .sp-divider-text  { writing-mode: horizontal-tb; transform: none; }
+  .sp-right         { padding: 32px 24px; }
+}
+
+
+/* ================================================================
+   INTERVIEW STEP styles  (formerly Interview.css)
+================================================================ */
+
 .iv-wrapper {
   min-height: calc(100vh - 60px);
   display: flex;
@@ -10,12 +191,8 @@
   overflow: hidden;
 }
 
-/* ===== BG BLOBS ===== */
-.iv-bg {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
+/* BG BLOBS */
+.iv-bg { position: absolute; inset: 0; pointer-events: none; }
 
 .iv-blob {
   position: absolute;
@@ -25,20 +202,16 @@
 }
 
 .iv-blob-1 {
-  width: 500px;
-  height: 500px;
+  width: 500px; height: 500px;
   background: radial-gradient(circle, #bfdbfe, #93c5fd);
-  top: -120px;
-  left: -100px;
+  top: -120px; left: -100px;
   animation: blobFloat 9s ease-in-out infinite alternate;
 }
 
 .iv-blob-2 {
-  width: 350px;
-  height: 350px;
+  width: 350px; height: 350px;
   background: radial-gradient(circle, #a7f3d0, #6ee7b7);
-  bottom: -80px;
-  right: -60px;
+  bottom: -80px; right: -60px;
   animation: blobFloat 11s ease-in-out infinite alternate-reverse;
 }
 
@@ -47,7 +220,7 @@
   to   { transform: translate(30px, 20px) scale(1.06); }
 }
 
-/* ===== CARD ===== */
+/* CARD */
 .iv-card {
   position: relative;
   z-index: 1;
@@ -68,10 +241,8 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ===== PROGRESS ===== */
-.iv-progress-row {
-  margin-bottom: 10px;
-}
+/* PROGRESS */
+.iv-progress-row { margin-bottom: 10px; }
 
 .iv-badge {
   display: inline-block;
@@ -101,7 +272,7 @@
   transition: width 0.6s ease;
 }
 
-/* ===== TEXT ===== */
+/* TEXT */
 .iv-phase-title {
   font-size: 1.6rem;
   font-weight: 700;
@@ -121,7 +292,7 @@
   margin-right: auto;
 }
 
-/* ===== WAVEFORM ===== */
+/* WAVEFORM */
 .iv-waveform-area {
   position: relative;
   display: flex;
@@ -133,8 +304,7 @@
 
 .iv-waveform-glow {
   position: absolute;
-  width: 200px;
-  height: 200px;
+  width: 200px; height: 200px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%);
   transition: all 0.4s ease;
@@ -145,11 +315,7 @@
   transform: scale(1.2);
 }
 
-.iv-waveform {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
+.iv-waveform { display: flex; align-items: center; gap: 4px; }
 
 .iv-bar {
   width: 4px;
@@ -169,7 +335,7 @@
   100% { transform: scaleY(1.1); }
 }
 
-/* ===== QUESTION BOX ===== */
+/* QUESTION BOX */
 .iv-question-box {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
@@ -187,10 +353,9 @@
   font-family: system-ui, sans-serif;
 }
 
-/* ===== MIC BUTTON ===== */
+/* MIC BUTTON */
 .iv-mic-btn {
-  width: 72px;
-  height: 72px;
+  width: 72px; height: 72px;
   border-radius: 50%;
   border: none;
   background: #1e3a8a;
@@ -211,20 +376,17 @@
 
 .iv-mic-btn--recording {
   background: #0891b2 !important;
-  animation: micPulse 1.4s ease-in-out infinite;
+  animation: micPulseIv 1.4s ease-in-out infinite;
   box-shadow: 0 0 0 0 rgba(8, 145, 178, 0.4) !important;
 }
 
-@keyframes micPulse {
+@keyframes micPulseIv {
   0%   { box-shadow: 0 0 0 0 rgba(8,145,178,0.5); }
   70%  { box-shadow: 0 0 0 18px rgba(8,145,178,0); }
   100% { box-shadow: 0 0 0 0 rgba(8,145,178,0); }
 }
 
-.iv-mic-btn--processing {
-  background: #64748b !important;
-  cursor: not-allowed;
-}
+.iv-mic-btn--processing { background: #64748b !important; cursor: not-allowed; }
 
 .iv-mic-label {
   font-size: 0.68rem;
@@ -235,10 +397,9 @@
   font-family: system-ui, sans-serif;
 }
 
-/* ===== SPINNER ===== */
+/* SPINNER */
 .iv-spinner {
-  width: 22px;
-  height: 22px;
+  width: 22px; height: 22px;
   border: 3px solid rgba(255,255,255,0.3);
   border-top-color: #fff;
   border-radius: 50%;
@@ -246,11 +407,9 @@
   display: block;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-/* ===== PAUSE BTN ===== */
+/* PAUSE BTN */
 .iv-pause-btn {
   display: inline-flex;
   align-items: center;
