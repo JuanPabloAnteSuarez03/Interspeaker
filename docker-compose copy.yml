@@ -1,0 +1,72 @@
+services:
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: interspeaker-backend
+    ports:
+      - "5100:5000"
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS:-}
+      - DEEPGRAM_API_KEY=${DEEPGRAM_API_KEY:-}
+      - SKIP_STT=${SKIP_STT:-}
+      - SKIP_GEMINI=${SKIP_GEMINI:-}
+    restart: unless-stopped
+    networks:
+      - interspeaker-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5100}
+        VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY:-}
+        VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN:-}
+        VITE_FIREBASE_PROJECT_ID: ${VITE_FIREBASE_PROJECT_ID:-}
+        VITE_FIREBASE_STORAGE_BUCKET: ${VITE_FIREBASE_STORAGE_BUCKET:-}
+        VITE_FIREBASE_MESSAGING_SENDER_ID: ${VITE_FIREBASE_MESSAGING_SENDER_ID:-}
+        VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID:-}
+    container_name: interspeaker-frontend
+    ports:
+      - "3100:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - interspeaker-network
+
+  minio:
+    build:
+      context: ./minio
+      dockerfile: Dockerfile
+      args:
+        MINIO_ROOT_USER: minioadmin
+        MINIO_ROOT_PASSWORD: minioadmin
+    image: minio/minio
+    container_name: almacenamiento-S3-local
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - ./minio/minio-data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - interspeaker-network
+
+networks:
+  interspeaker-network:
+    driver: bridge

@@ -7,7 +7,7 @@ load_dotenv()
 from routes.interview import interview_bp
 from routes.stt import stt_bp
 from routes.tts import tts_bp
-from routes.evaluation import evaluation_bp
+#from routes.evaluation import evaluation_bp
 from routes.llm import llm_bp
 
 
@@ -200,7 +200,7 @@ def create_app():
     app.register_blueprint(interview_bp, url_prefix="/api/interview")
     app.register_blueprint(stt_bp, url_prefix="/api/stt")
     app.register_blueprint(tts_bp, url_prefix="/api/tts")
-    app.register_blueprint(evaluation_bp, url_prefix="/api/evaluation")
+    #app.register_blueprint(evaluation_bp, url_prefix="/api/evaluation")
     app.register_blueprint(llm_bp, url_prefix="/api/llm")
 
     return app

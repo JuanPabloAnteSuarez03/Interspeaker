@@ -2,7 +2,9 @@ import os
 import boto3
 from google.cloud import firestore
 from botocore.client import Config
+from dotenv import load_dotenv
 
+load_dotenv()
 
 db = firestore.Client()
 
