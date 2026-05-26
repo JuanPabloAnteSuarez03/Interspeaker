@@ -319,8 +319,7 @@ def evaluate_and_finish():
             
     except Exception as e:
         return jsonify({"error": f"Error generando evaluación: {str(e)}"}), 500
-    
-    # Generar audio de feedback
+
     feedback_audio_url = None
     try:
         feedback_bytes = synthesize_speech(text=evaluation_text, voice=voice)
@@ -328,8 +327,7 @@ def evaluate_and_finish():
         feedback_audio_url = _upload_audio_to_s3(feedback_bytes, feedback_s3_path)
     except Exception as e:
         logger.error(f"Error generando audio feedback: {e}")
-    
-    # Completar entrevista
+
     interview_ref.update({
         "status": "completed",
         "evaluation_text": evaluation_text,
@@ -340,7 +338,6 @@ def evaluate_and_finish():
         "updated_at": firestore.SERVER_TIMESTAMP
     })
     
-    # Limpiar audios temporales
     _clean_user_audios(user_id)
     
     return jsonify({
@@ -357,13 +354,11 @@ def get_user_interviews(user_id):
     """
     if not user_id:
         return jsonify({"error": "Se requiere user_id"}), 400
-    
-    # Verificar que el usuario existe
+
     user_ref = db.collection("users").document(user_id)
     if not user_ref.get().exists:
         return jsonify({"error": "Usuario no encontrado"}), 404
     
-    # Obtener entrevistas
     interviews_ref = db.collection("users").document(user_id).collection("interviews")
     interviews = interviews_ref.order_by("created_at", direction=firestore.Query.DESCENDING).get()
     
@@ -387,3 +382,65 @@ def get_user_interviews(user_id):
         "total_interviews": len(result),
         "interviews": result
     }), 200
+
+@interview_bp.route("/user/<user_id>/interviews/<session_id>", methods=["GET"])
+def get_user_interview_by_session(user_id, session_id):
+    """
+    Obtener una entrevista específica de un usuario por session_id
+    """
+    if not user_id:
+        return jsonify({"error": "Se requiere user_id"}), 400
+    
+    if not session_id:
+        return jsonify({"error": "Se requiere session_id"}), 400
+
+    user_ref = db.collection("users").document(user_id)
+    if not user_ref.get().exists:
+        return jsonify({"error": "Usuario no encontrado"}), 404
+    
+    interview_ref = db.collection("users").document(user_id).collection("interviews").document(session_id)
+    interview_doc = interview_ref.get()
+    
+    if not interview_doc.exists:
+        return jsonify({"error": "Entrevista no encontrada para este usuario"}), 404
+    
+    data = interview_doc.to_dict()
+
+    questions_list = []
+    if data.get("questions"):
+        for q in data.get("questions", []):
+            question_data = {
+                "index": q.get("index"),
+                "question_text": q.get("question_text"),
+                "answer_text": q.get("answer_text"),
+                "audio_url": q.get("audio_url")
+            }
+            questions_list.append(question_data)
+    
+    response = {
+        "session_id": session_id,
+        "user_id": data.get("user_id"),
+        "area": data.get("area"),
+        "experience": data.get("experience"),
+        "status": data.get("status"),
+        "score": data.get("evaluation_score"),
+        "total_questions": data.get("total_questions"),
+        "answered_questions": data.get("answered_questions", 0),
+        "current_question_index": data.get("current_question_index", 0),
+        "questions": questions_list,
+        "started_at": data.get("started_at"),
+        "completed_at": data.get("completed_at"),
+        "created_at": data.get("created_at"),
+        "updated_at": data.get("updated_at")
+    }
+    
+    if data.get("evaluation_audio_url"):
+        response["evaluation_audio_url"] = data.get("evaluation_audio_url")
+    
+    if data.get("evaluation_categories"):
+        response["evaluation_categories"] = data.get("evaluation_categories")
+    
+    if data.get("evaluation_text"):
+        response["evaluation_text"] = data.get("evaluation_text")
+    
+    return jsonify(response), 200
