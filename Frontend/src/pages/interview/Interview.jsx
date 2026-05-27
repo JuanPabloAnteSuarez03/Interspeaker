@@ -55,11 +55,9 @@ export default function Interview() {
 
   /* ─── Audio URL Resolution ─────────────────────────────────────── */
   const constructAudioUrl = useCallback((uid, sid, index) => {
-    const BASE = "http://localhost:9000";
-
     if (!uid || !sid) return null;
 
-    return `${BASE}/interspeaker/AudioUsuarios/${uid}/${sid}/question_${index}.mp3`;
+    return `https://pub-7ab91183bd8847ea812388b1bdb788d4.r2.dev/interspeaker/AudioUsuarios/${uid}/${sid}/question_${index}.mp3`;
   }, []);
 
   const pollAudioUrl = useCallback(
