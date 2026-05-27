@@ -38,7 +38,7 @@ def _upload_audio_to_s3(audio_bytes: bytes, s3_path: str) -> str:
         Body=audio_bytes,
         ContentType="audio/mpeg"
     )
-    return f"{PUBLIC_URL_BASE}/{BUCKET_NAME}/{s3_path}"
+    return f"{PUBLIC_URL_BASE}/{s3_path}"
 
 def _background_tts_processing(user_id: str, session_id: str, questions_data: list, voice: str):
     """Generar audios en segundo plano"""
