@@ -113,6 +113,7 @@ def test_generate_questions_content():
 def test_interview_start_returns_required_fields(client):
     """POST /api/interview/start devuelve question, history y session_id."""
     r = client.post("/api/interview/start", json={
+        "user_id": "test-user",
         "area": "datos",
         "experience": "mid",
         "session_id": "test-ca2-start",
@@ -120,10 +121,13 @@ def test_interview_start_returns_required_fields(client):
     assert r.status_code == 200
     body = r.get_json()
     assert "question" in body
-    assert "history" in body
-    assert body["session_id"] == "test-ca2-start"
-    assert len(body["history"]) == 1
-    assert body["history"][0]["role"] == "interviewer"
+    assert "questions_metadata" in body
+    assert "session_id" in body
+    assert "audio_base64" in body
+
+    assert body["user_id"] == "test-user"
+    assert body["current_index"] == 0
+    assert len(body["questions_metadata"]) > 0
     llm_metrics.clear_session("test-ca2-start")
 
 
@@ -212,7 +216,10 @@ def test_metrics_endpoint_after_start(client):
     llm_metrics.clear_session(sid)
 
     client.post("/api/interview/start", json={
-        "area": "backend", "experience": "junior", "session_id": sid,
+        "user_id": "test-user",
+        "area": "backend",
+        "experience": "junior",
+        "session_id": sid,
     })
 
     r = client.get(f"/api/llm/metrics/{sid}")
@@ -242,6 +249,7 @@ def test_metrics_endpoint_empty_session(client):
 def test_interview_start_with_audio(client):
     """POST /api/interview/start con include_audio=true devuelve audio_base64."""
     r = client.post("/api/interview/start", json={
+        "user_id": "test-user",
         "area": "backend",
         "experience": "junior",
         "session_id": "test-ca8-audio",
