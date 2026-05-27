@@ -1,7 +1,6 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import Interview from './Interview'
-import * as api from '../../services/api'
 
 // ── Mocks globales ───────────────────────────────────────────────
 jest.mock('../../firebase', () => ({
@@ -13,6 +12,9 @@ jest.mock('../../services/api', () => ({
   submitAnswer: jest.fn(),
   evaluateInterview: jest.fn(),
 }))
+
+// Se obtiene el módulo mockeado DESPUÉS del jest.mock
+const api = require('../../services/api')
 
 const mockNavigate = jest.fn()
 jest.mock('react-router-dom', () => ({

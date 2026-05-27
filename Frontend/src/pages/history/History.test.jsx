@@ -1,7 +1,6 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import History from './History'
-import * as api from '../../services/api'
 
 jest.mock('../../firebase', () => ({
   auth: { currentUser: { uid: 'uid-123' } },
@@ -10,6 +9,9 @@ jest.mock('../../firebase', () => ({
 jest.mock('../../services/api', () => ({
   getUserInterviews: jest.fn(),
 }))
+
+// Se obtiene el módulo mockeado DESPUÉS del jest.mock
+const api = require('../../services/api')
 
 const mockInterviews = [
   {
