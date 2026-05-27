@@ -112,9 +112,11 @@ def evaluate_interview_full(area: str, experience: str, qa_pairs: List[Dict[str,
     if llm_settings.stub_mode():
         logger.info("Gemini en modo STUB: Generando feedback simulado.")
         return (
-            f"Evaluación técnica para {area}. Demuestras manejo en conceptos base, "
-            "pero se detectaron imprecisiones en la justificación de la arquitectura. "
-            "Debes corregir la falta de profundidad en optimización de rendimiento."
+            "Felicidades por completar la entrevista. "
+            f"Has demostrado un entendimiento sólido en los conceptos clave de {area}. "
+            "Tus respuestas reflejan una buena capacidad analítica, especialmente al resolver "
+            "problemas de arquitectura. Como recomendación, profundiza más en los detalles de "
+            "optimización en tus próximos proyectos. ¡Mucho éxito!"
         )
 
     conversation_history = ""
@@ -125,23 +127,20 @@ def evaluate_interview_full(area: str, experience: str, qa_pairs: List[Dict[str,
         conversation_history += f"--- Turno {idx} ---\nEntrevistador: {pregunta}\nCandidato: {respuesta}\n\n"
 
     system_instruction = (
-        "Eres un evaluador técnico senior extremadamente directo, crítico y objetivo. Tu único objetivo es "
-        "auditar las respuestas del candidato, penalizar severamente los errores conceptuales, las evasivas "
-        "o la falta de profundidad, y reportar el estado real de sus habilidades. No uses lenguaje motivacional, "
-        "no halagues al candidato ni intentes sonar amable. Sé corto, seco y ve directo al grano."
+        "Eres el comité de evaluación técnica de una empresa que está evaluando a un candidato. Tu trabajo es analizar la trascripción "
+        "de una entrevista de trabajo y proveer una devolución constructiva, profesional y motivadora al candidato."
     )
 
     prompt = (
-        f"Evalúa el desempeño técnico del candidato para el rol de {area} ({experience}).\n\n"
+        f"Evalúa críticamente el desempeño técnico del candidato para el área de {area} ({experience}).\n\n"
         f"Historial de la entrevista:\n"
         f"{conversation_history}\n"
-        f"Instrucciones estrictas de salida:\n"
+        f"Instrucciones estrictas de evaluación y formato:\n"
         f"1. Dirígete directamente al candidato en primera persona.\n"
-        f"2. Sé ultra-conciso. Dictamina de inmediato qué hizo bien, qué errores técnicos cometió y qué le faltó responder.\n"
-        f"3. Si cometió un error conceptual, indícalo y penalízalo explícitamente sin suavizar las palabras.\n"
-        f"4. Prohibido usar introducciones de cortesía (ej. 'Gracias por tu tiempo', 'Felicidades'). Ve directo a la evaluación.\n"
-        f"5. OBLIGATORIO PARA TTS: Escribe exclusivamente en un único párrafo limpio o máximo dos párrafos continuos. "
-        f"No uses viñetas, asteriscos, guiones, subtítulos ni marcas de formato Markdown."
+        f"2. Sé ultra-conciso. Dictamina de inmediato qué competencias técnicas demostró y qué errores conceptuales específicos cometió, ayudando al usuario a mejorar su desempeño.\n"
+        f"3. LIMITACIÓN DE EXTENSIÓN: La respuesta total debe tener un límite estricto de menos de 1800 caracteres totales.\n"
+        f"4. OBLIGATORIO PARA TTS: Genera la salida exclusivamente en párrafos limpios y continuos. "
+        f"Está estrictamente prohibido usar viñetas, asteriscos, guiones, subtítulos o cualquier formato Markdown."
     )
 
     try:
@@ -151,7 +150,7 @@ def evaluate_interview_full(area: str, experience: str, qa_pairs: List[Dict[str,
             contents=prompt,
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
-                temperature=0.2
+                temperature=0.5
             )
         )
 
