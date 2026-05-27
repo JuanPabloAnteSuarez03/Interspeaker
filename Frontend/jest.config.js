@@ -6,6 +6,8 @@ export default {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
     '\\.(jpg|jpeg|png|gif|svg)$': '<rootDir>/__mocks__/fileMock.js',
     '(.*)/firebase(\\.js)?$': '<rootDir>/__mocks__/firebase.js',
+      '^../../services/api$': '<rootDir>/src/services/__mocks__/api.js',
+  '^../services/api$': '<rootDir>/src/services/__mocks__/api.js',
   },
   transform: {
     '^.+\\.(js|jsx)$': 'babel-jest',
