@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './Interview.css'
 import * as api from '../../services/api'
+import { auth } from '../../../firebase'
 
 const LEVELS = ['Sin experiencia', '1 - 2 años', '3 - 5 años', '6+ años']
 const EXPERIENCE_MAP = {
@@ -31,14 +32,19 @@ export default function Interview() {
   
   // Interview state
   const [sessionId, setSessionId] = useState(null)
+  const [userId, setUserId] = useState(null)
   const [questions, setQuestions] = useState([])
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [currentAudioUrl, setCurrentAudioUrl] = useState(null)
+  const [audioUrls, setAudioUrls] = useState({}) // Mapeo: index -> audioUrl
   const [phase, setPhase] = useState('listening')
   const [recording, setRecording] = useState(false)
   const [volume, setVolume] = useState(0)
   const [duration, setDuration] = useState(0)
   const [error, setError] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
+  const [savedSession, setSavedSession] = useState(null)
 
   const mediaRecorderRef = useRef(null)
   const streamRef = useRef(null)
@@ -46,6 +52,102 @@ export default function Interview() {
   const animFrameRef = useRef(null)
   const timerRef = useRef(null)
   const chunksRef = useRef([])
+  const audioRef = useRef(null)
+
+  /* ─── Audio URL Resolution ─────────────────────────────────────── */
+  const constructAudioUrl = useCallback((uid, sid, index) => {
+    return `http://localhost:9000/interspeaker/AudioUsuarios/${uid}/${sid}/question_${index}.mp3`
+  }, [])
+
+  const pollAudioUrl = useCallback(async (uid, sid, index, maxAttempts = 20) => {
+    const audioUrl = constructAudioUrl(uid, sid, index)
+    let attempts = 0
+    
+    return new Promise((resolve) => {
+      const interval = setInterval(async () => {
+        attempts++
+        try {
+          const response = await fetch(audioUrl, { method: 'HEAD' })
+          if (response.ok) {
+            clearInterval(interval)
+            console.log(`✅ Audio pregunta ${index} encontrado después de ${attempts} intentos`)
+            resolve(audioUrl)
+            return
+          }
+        } catch (err) {
+          // URL no disponible aún
+        }
+        
+        if (attempts >= maxAttempts) {
+          clearInterval(interval)
+          console.warn(`⚠️ Audio pregunta ${index} no encontrado después de ${maxAttempts} intentos`)
+          resolve(null) // Devolver null si no encuentra el audio
+        }
+      }, 500) // Verificar cada 500ms
+    })
+  }, [constructAudioUrl])
+
+  const resolveAudioUrl = useCallback(async (uid, sid, index, apiUrl) => {
+    // Si viene URL de la API, usar esa
+    if (apiUrl) {
+      return apiUrl
+    }
+    
+    // Si no viene, construir y buscar en el bucket
+    console.log(`🔍 Buscando audio pregunta ${index} en bucket...`)
+    return await pollAudioUrl(uid, sid, index)
+  }, [pollAudioUrl])
+  const saveSessionToStorage = useCallback(() => {
+    if (sessionId && questions.length > 0) {
+      const sessionData = {
+        sessionId,
+        userId,
+        currentIndex,
+        questions,
+        audioUrls,
+        area,
+        level,
+        timestamp: Date.now()
+      }
+      localStorage.setItem('interviewSession', JSON.stringify(sessionData))
+      console.log('💾 Sesión guardada en localStorage')
+    }
+  }, [sessionId, userId, currentIndex, questions, audioUrls, area, level])
+
+  const loadSessionFromStorage = useCallback(() => {
+    try {
+      const saved = localStorage.getItem('interviewSession')
+      if (saved) {
+        const sessionData = JSON.parse(saved)
+        setSavedSession(sessionData)
+        console.log('📂 Sesión guardada detectada:', sessionData)
+        return sessionData
+      }
+    } catch (err) {
+      console.error('Error cargando sesión:', err)
+    }
+    return null
+  }, [])
+
+  const clearSessionFromStorage = useCallback(() => {
+    localStorage.removeItem('interviewSession')
+    setSavedSession(null)
+    console.log('🗑️ Sesión guardada eliminada')
+  }, [])
+
+  const resumeSession = useCallback((sessionData) => {
+    setSessionId(sessionData.sessionId)
+    setUserId(sessionData.userId)
+    setQuestions(sessionData.questions)
+    setCurrentIndex(sessionData.currentIndex)
+    setAudioUrls(sessionData.audioUrls)
+    setArea(sessionData.area)
+    setLevel(sessionData.level)
+    setPhase('listening')
+    setStep('interview')
+    setSavedSession(null)
+    console.log('▶️ Sesión reanudada desde pregunta', sessionData.currentIndex + 1)
+  }, [])
 
   useEffect(() => {
     return () => {
@@ -54,6 +156,36 @@ export default function Interview() {
       clearInterval(timerRef.current)
     }
   }, [])
+
+  // Detectar sesión guardada al montar
+  useEffect(() => {
+    const saved = loadSessionFromStorage()
+    if (saved && step === 'setup') {
+      // Hay una sesión guardada, mostrar opción de continuar
+      setSavedSession(saved)
+    }
+  }, [loadSessionFromStorage])
+
+  // Guardar sesión automáticamente cuando cambia el estado
+  useEffect(() => {
+    saveSessionToStorage()
+  }, [sessionId, currentIndex, audioUrls, saveSessionToStorage])
+
+  // Reproducir audio de la pregunta cuando cambia
+  useEffect(() => {
+    if (audioRef.current && phase === 'listening') {
+      const audioUrl = audioUrls[currentIndex]
+      if (audioUrl) {
+        console.log(`🔊 Cargando audio para pregunta ${currentIndex + 1}:`, audioUrl)
+        audioRef.current.src = audioUrl
+        audioRef.current.play().catch(err => {
+          console.warn('No se pudo reproducir audio:', err)
+        })
+      } else {
+        console.warn(`⚠️ No hay audio para pregunta ${currentIndex + 1}`)
+      }
+    }
+  }, [currentIndex, audioUrls, phase])
 
   const stopStream = () => {
     if (streamRef.current) {
@@ -159,29 +291,70 @@ export default function Interview() {
     setError(null)
 
     try {
-      const isLastQuestion = currentIndex === questions.length - 1
+      // TODAS las preguntas usan submitAnswer
+      let result = null
+      let retries = 0
+      const maxRetries = 2
+      
+      // Reintentar si la transcripción falla
+      while (retries <= maxRetries) {
+        try {
+          result = await api.submitAnswer(sessionId, currentIndex, audioBlob)
+          console.log('📝 Respuesta procesada:', result)
+          break
+        } catch (err) {
+          retries++
+          if (retries <= maxRetries) {
+            console.warn(`⚠️ Intento ${retries} falló, reintentando...`)
+            await new Promise(r => setTimeout(r, 500))
+          } else {
+            throw err
+          }
+        }
+      }
 
-      if (isLastQuestion) {
-        // Finalizar y evaluar
-        const result = await api.evaluateInterview(sessionId, currentIndex, audioBlob)
-        navigate('/results', { 
-          state: { 
-            sessionId, 
-            evaluation: result,
-            area,
-            level
-          } 
-        })
-      } else {
-        // Enviar respuesta y cargar siguiente pregunta
-        const result = await api.submitAnswer(sessionId, currentIndex, audioBlob)
+      if (result.has_more) {
+        // Hay más preguntas, avanza a la siguiente
+        const nextIndex = result.next_index
         
-        if (result.has_more) {
-          setCurrentIndex(result.next_index)
-          setPhase('listening')
-          setDuration(0)
+        // Resolver URL del audio (API o bucket)
+        const audioUrl = await resolveAudioUrl(userId, sessionId, nextIndex, result.next_audio_url)
+        
+        if (audioUrl) {
+          setAudioUrls(prev => ({ 
+            ...prev, 
+            [nextIndex]: audioUrl 
+          }))
+          console.log(`🔊 Audio para pregunta ${nextIndex} guardado:`, audioUrl)
         } else {
-          throw new Error('No hay más preguntas')
+          console.warn(`⚠️ No se pudo obtener audio para pregunta ${nextIndex}`)
+        }
+        
+        setCurrentIndex(nextIndex)
+        setPhase('listening')
+        setDuration(0)
+      } else {
+        // Fue la última pregunta, ahora evalúa
+        console.log('🏁 Última pregunta respondida, iniciando evaluación...')
+        clearSessionFromStorage() // Limpiar sesión al finalizar
+        
+        // Pequeño delay para asegurar que Firestore esté actualizado
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        try {
+          const evaluation = await api.evaluateInterview(sessionId)
+          navigate('/results', { 
+            state: { 
+              sessionId, 
+              evaluation,
+              area,
+              level
+            } 
+          })
+        } catch (evalError) {
+          console.error('Error en evaluación:', evalError)
+          setError(evalError.message)
+          setPhase('listening')
         }
       }
     } catch (err) {
@@ -207,18 +380,36 @@ export default function Interview() {
   const handleStartInterview = async () => {
     setIsLoading(true)
     setError(null)
+    clearSessionFromStorage() // Limpiar sesión anterior
 
     try {
       await requestMicPermission()
+      
+      // Obtener userId de Firebase
+      const uid = auth.currentUser?.uid
+      if (!uid) {
+        throw new Error('No autenticado')
+      }
+      setUserId(uid)
       
       const response = await api.startInterview(
         area,
         EXPERIENCE_MAP[level]
       )
 
+      console.log('🎬 Entrevista iniciada:', response)
+
       setSessionId(response.session_id)
       setQuestions(response.questions_metadata)
       setCurrentIndex(0)
+      
+      // Convertir audio_base64 de la primera pregunta (index 0) a data-url
+      if (response.audio_base64) {
+        const audioUrl = `data:audio/mp3;base64,${response.audio_base64}`
+        setAudioUrls(prev => ({ ...prev, 0: audioUrl }))
+        console.log('🔊 Audio de pregunta 0 (primera) cargado desde base64')
+      }
+      
       setPhase('listening')
       setStep('interview')
     } catch (err) {
@@ -230,9 +421,38 @@ export default function Interview() {
   }
 
   if (step === 'setup') {
-    return <SetupStep 
-      {...{ area, setArea, level, setLevel, handleStartInterview, micState, error, isLoading }} 
-    />
+    return (
+      <>
+        <SetupStep 
+          {...{ area, setArea, level, setLevel, handleStartInterview, micState, error, isLoading }} 
+        />
+        
+        {savedSession && (
+          <div className="iv-recovery-overlay">
+            <div className="iv-recovery-modal">
+              <h2 className="iv-recovery-title">Entrevista no finalizada</h2>
+              <p className="iv-recovery-text">
+                Tienes una entrevista guardada en la pregunta {savedSession.currentIndex + 1} de {savedSession.questions.length}
+              </p>
+              <div className="iv-recovery-actions">
+                <button 
+                  className="iv-recovery-continue-btn"
+                  onClick={() => resumeSession(savedSession)}
+                >
+                  ▶️ Continuar entrevista
+                </button>
+                <button 
+                  className="iv-recovery-new-btn"
+                  onClick={() => clearSessionFromStorage()}
+                >
+                  ➕ Nueva entrevista
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
+    )
   }
 
   return <InterviewStep 
@@ -248,7 +468,10 @@ export default function Interview() {
       duration,
       error,
       isLoading,
-      setError
+      setError,
+      audioRef,
+      isPaused,
+      setIsPaused
     }}
   />
 }
@@ -348,7 +571,10 @@ function InterviewStep({
   duration, 
   error,
   isLoading,
-  setError 
+  setError,
+  audioRef,
+  isPaused,
+  setIsPaused
 }) {
   const current = currentIndex + 1
   const isLastQuestion = currentIndex === totalQuestions - 1
@@ -431,6 +657,12 @@ function InterviewStep({
         {phase === 'listening' && question && (
           <div className="iv-question-box">
             <p className="iv-question-text">"{question}"</p>
+            <audio 
+              ref={audioRef}
+              controls 
+              className="iv-audio-player"
+              onEnded={() => console.log('Audio terminó')}
+            />
           </div>
         )}
 
@@ -468,6 +700,31 @@ function InterviewStep({
             ? 'PULSAR PARA DETENER'
             : 'PROCESANDO...'}
         </p>
+
+        {isPaused && (
+          <div className="iv-paused-overlay">
+            <div className="iv-paused-content">
+              <h3 className="iv-paused-title">Entrevista pausada</h3>
+              <p className="iv-paused-text">Pregunta {current} de {totalQuestions}</p>
+              <button 
+                className="iv-continue-btn"
+                onClick={() => setIsPaused(false)}
+              >
+                Continuar entrevista
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!isPaused && phase === 'listening' && (
+          <button 
+            className="iv-pause-btn"
+            onClick={() => setIsPaused(true)}
+            title="Pausar entrevista"
+          >
+            ⏸ Pausar
+          </button>
+        )}
       </div>
     </div>
   )

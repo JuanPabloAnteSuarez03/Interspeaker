@@ -56,24 +56,19 @@ export async function submitAnswer(sessionId, currentIndex, audioBlob) {
   return res.json()
 }
 
-export async function evaluateInterview(sessionId, currentIndex, audioBlob, voice = 'aura-2-diana-es') {
+export async function evaluateInterview(sessionId, voice = 'aura-2-diana-es') {
   const userId = getFirebaseUid()
   if (!userId) throw new Error('Usuario no autenticado')
 
-  console.log('🔴 ENVIANDO EVALUATE:', {
+  console.log('📊 INICIANDO EVALUACIÓN:', {
     sessionId,
-    currentIndex,
     userId,
-    audioSize: audioBlob?.size,
-    audioType: audioBlob?.type,
     endpoint: `${API_URL}/api/interview/evaluate`,
   })
 
   const form = new FormData()
-  form.append('audio', audioBlob, 'answer.webm')
   form.append('user_id', userId)
   form.append('session_id', sessionId)
-  form.append('current_index', String(currentIndex))
   form.append('voice', voice)
 
   const res = await fetch(`${API_URL}/api/interview/evaluate`, {
@@ -83,12 +78,12 @@ export async function evaluateInterview(sessionId, currentIndex, audioBlob, voic
 
   if (!res.ok) {
     const error = await res.json()
-    console.error('❌ EVALUATE ERROR:', error)
+    console.error('❌ EVALUACIÓN ERROR:', error)
     throw new Error(error.error || 'Error finalizando entrevista')
   }
 
   const result = await res.json()
-  console.log('✅ EVALUATE SUCCESS:', result)
+  console.log('✅ EVALUACIÓN EXITOSA:', result)
   return result
 }
 
