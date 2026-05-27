@@ -1,6 +1,14 @@
 import { auth } from '../../firebase'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+function getApiUrl() {
+  // En Jest/Node, process.env estará disponible
+  if (typeof process !== 'undefined' && process.env && process.env.VITE_API_URL) {
+    return process.env.VITE_API_URL
+  }
+  return 'http://localhost:5001'
+}
+
+const API_URL = getApiUrl()
 
 function getFirebaseUid() {
   return auth.currentUser?.uid || null
