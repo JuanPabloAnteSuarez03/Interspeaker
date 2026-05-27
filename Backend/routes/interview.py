@@ -5,7 +5,7 @@ import logging
 import threading
 from flask import Blueprint, jsonify, request
 from google.cloud import firestore
-from config.storage_clients import db, s3_client, BUCKET_NAME
+from config.storage_clients import db, s3_client, BUCKET_NAME, PUBLIC_URL_BASE
 from services.gemini_service import generate_interview_questions, evaluate_interview_full
 from services.tts_service import synthesize_speech, TTSError
 from services.stt_service import transcribe_audio
@@ -31,15 +31,14 @@ def validate_user_id(user_id: str) -> bool:
     return True
 
 def _upload_audio_to_s3(audio_bytes: bytes, s3_path: str) -> str:
-    """Subir audio a S3"""
+    """Subir audio a R2 de forma privada y retornar su URL pública constante"""
     s3_client.put_object(
         Bucket=BUCKET_NAME,
         Key=s3_path,
         Body=audio_bytes,
         ContentType="audio/mpeg"
     )
-    endpoint = s3_client.meta.endpoint_url
-    return f"{endpoint}/{BUCKET_NAME}/{s3_path}"
+    return f"{PUBLIC_URL_BASE}/{BUCKET_NAME}/{s3_path}"
 
 def _background_tts_processing(user_id: str, session_id: str, questions_data: list, voice: str):
     """Generar audios en segundo plano"""
@@ -54,16 +53,13 @@ def _background_tts_processing(user_id: str, session_id: str, questions_data: li
                 s3_path = f"AudioUsuarios/{user_id}/{session_id}/question_{i}.mp3"
                 audio_url = _upload_audio_to_s3(audio_bytes, s3_path)
                 
-                # Leer el documento actual para obtener la pregunta completa
                 doc = interview_ref.get()
                 if doc.exists:
                     current_questions = doc.to_dict().get("questions", [])
                     
                     if i < len(current_questions):
-                        # Preservar todos los campos existentes y solo actualizar audio_url
                         current_questions[i]["audio_url"] = audio_url
                         
-                        # Actualizar todo el array (es la única forma segura)
                         interview_ref.update({
                             "questions": current_questions
                         })
@@ -320,6 +316,7 @@ def evaluate_and_finish():
         feedback_audio_url = _upload_audio_to_s3(feedback_bytes, feedback_s3_path)
     except Exception as e:
         logger.error(f"Error generando audio feedback: {e}")
+        print("fallo tts en feedback")
 
     interview_ref.update({
         "status": "completed",
