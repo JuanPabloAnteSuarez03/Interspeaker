@@ -6,7 +6,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-db = firestore.Client()
+iniciaFirestore = os.getenv("FLASK_ENV") == "production"
+
+if iniciaFirestore:
+    db = firestore.Client()
+else:
+    db = "No existe"
 
 s3_client = boto3.client(
     "s3",
@@ -14,7 +19,8 @@ s3_client = boto3.client(
     aws_access_key_id=os.getenv("STORAGE_ROOT_USER"),
     aws_secret_access_key=os.getenv("STORAGE_ROOT_PASSWORD"),
     config=Config(signature_version="s3v4"),
-    region_name="us-east-1"
+    region_name="auto"
 )
 
 BUCKET_NAME = os.getenv("STORAGE_BUCKET_NAME")
+PUBLIC_URL_BASE = os.getenv("STORAGE_PUBLIC_URL")
