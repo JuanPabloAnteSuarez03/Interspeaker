@@ -6,7 +6,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-db = firestore.Client()
+# Initialize Firestore with error handling for test environments
+try:
+    db = firestore.Client()
+except Exception as e:
+    # In testing environments without credentials, use a None placeholder
+    if os.getenv("TESTING"):
+        db = None
+    else:
+        raise
 
 s3_client = boto3.client(
     "s3",

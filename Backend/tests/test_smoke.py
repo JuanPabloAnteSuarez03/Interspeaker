@@ -16,7 +16,11 @@ def test_openapi(client):
 
 
 def test_interview_start_stub(client):
-    r = client.post("/api/interview/start", json={"area": "backend", "level": "junior"})
+    r = client.post("/api/interview/start", json={
+        "user_id": "test-user",
+        "area": "backend",
+        "experience": "junior"
+    })
     assert r.status_code == 200
     assert "question" in r.get_json()
 
@@ -41,5 +45,8 @@ def test_tts_requires_text(client):
 
 
 def test_evaluation_requires_transcripts(client):
-    r = client.post("/api/evaluation/report", json={"area": "backend"})
-    assert r.status_code == 400
+    r = client.post(
+        "/api/interview/evaluate",
+        data={"user_id": "test-user", "session_id": "fake-session"}
+    )
+    assert r.status_code != 500

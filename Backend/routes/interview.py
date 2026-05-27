@@ -44,23 +44,34 @@ def _upload_audio_to_s3(audio_bytes: bytes, s3_path: str) -> str:
 def _background_tts_processing(user_id: str, session_id: str, questions_data: list, voice: str):
     """Generar audios en segundo plano"""
     try:
-        updated_questions = list(questions_data)
+        interview_ref = db.collection("users").document(user_id).collection("interviews").document(session_id)
         
-        for i in range(1, len(updated_questions)):
-            text_to_speak = updated_questions[i]["question_text"]
+        for i in range(1, len(questions_data)):
             try:
+                # Generar audio
+                text_to_speak = questions_data[i]["question_text"]
                 audio_bytes = synthesize_speech(text=text_to_speak, voice=voice)
-                s3_path = f"Proyecto/AudioUsuarios/{user_id}/{session_id}/question_{i}.mp3"
+                s3_path = f"AudioUsuarios/{user_id}/{session_id}/question_{i}.mp3"
                 audio_url = _upload_audio_to_s3(audio_bytes, s3_path)
-                updated_questions[i]["audio_url"] = audio_url
+                
+                # Leer el documento actual para obtener la pregunta completa
+                doc = interview_ref.get()
+                if doc.exists:
+                    current_questions = doc.to_dict().get("questions", [])
+                    
+                    if i < len(current_questions):
+                        # Preservar todos los campos existentes y solo actualizar audio_url
+                        current_questions[i]["audio_url"] = audio_url
+                        
+                        # Actualizar todo el array (es la única forma segura)
+                        interview_ref.update({
+                            "questions": current_questions
+                        })
+                        
+                        logger.info(f"Audio actualizado para pregunta {i} en sesión {session_id}")
                 
             except Exception as e:
                 logger.error(f"Error procesando pregunta {i}: {e}")
-        
-        interview_ref = db.collection("users").document(user_id).collection("interviews").document(session_id)
-        interview_ref.update({
-            "questions": updated_questions
-        })
         
         logger.info(f"TTS completado para sesión {session_id}")
         
@@ -70,7 +81,7 @@ def _background_tts_processing(user_id: str, session_id: str, questions_data: li
 def _clean_user_audios(user_id: str):
     """Limpiar audios temporales"""
     try:
-        prefix = f"Proyecto/AudioUsuarios/{user_id}/"
+        prefix = f"AudioUsuarios/{user_id}/"
         response = s3_client.list_objects_v2(Bucket=BUCKET_NAME, Prefix=prefix)
         
         if "Contents" in response:
@@ -257,20 +268,14 @@ def submit_answer():
 @interview_bp.route("/evaluate", methods=["POST"])
 def evaluate_and_finish():
     """
-    Evalúa la entrevista completa
+    Evalúa la entrevista completa - NO procesa audio, SOLO evalúa
     """
     user_id = request.form.get("user_id", "").strip()
     session_id = request.form.get("session_id", "").strip()
-    current_index = request.form.get("current_index")
     voice = request.form.get("voice", "aura-2-diana-es")
     
-    if not user_id or not session_id or current_index is None:
-        return jsonify({"error": "Faltan campos: user_id, session_id o current_index"}), 400
-    
-    if "audio" not in request.files:
-        return jsonify({"error": "Falta archivo de audio"}), 400
-    
-    current_index = int(current_index)
+    if not user_id or not session_id:
+        return jsonify({"error": "Faltan campos: user_id o session_id"}), 400
     
     interview_ref = db.collection("users").document(user_id).collection("interviews").document(session_id)
     doc = interview_ref.get()
@@ -281,25 +286,12 @@ def evaluate_and_finish():
     interview_data = doc.to_dict()
     questions = interview_data.get("questions", [])
     
-    audio_file = request.files["audio"]
-    
-    try:
-        last_transcript = transcribe_audio(
-            audio_file.read(),
-            filename=audio_file.filename or "answer.webm",
-            content_type=audio_file.content_type
-        )
-        
-        questions[current_index]["answer_text"] = last_transcript
-        answered_count = len([q for q in questions if q.get("answer_text")])
-        
-        interview_ref.update({
-            "questions": questions,
-            "answered_questions": answered_count
-        })
-        
-    except Exception as e:
-        return jsonify({"error": f"Error procesando audio: {str(e)}"}), 422
+    answered_count = len([q for q in questions if q.get("answer_text")])
+    if answered_count < len(questions):
+        return jsonify({
+            "error": f"No se puede evaluar: solo {answered_count} de {len(questions)} preguntas respondidas",
+            "pending_questions": len(questions) - answered_count
+        }), 400
     
     try:
         evaluation_result = evaluate_interview_full(
@@ -318,12 +310,13 @@ def evaluate_and_finish():
             evaluation_categories = None
             
     except Exception as e:
+        logger.error(f"Error generando evaluación: {e}")
         return jsonify({"error": f"Error generando evaluación: {str(e)}"}), 500
 
     feedback_audio_url = None
     try:
         feedback_bytes = synthesize_speech(text=evaluation_text, voice=voice)
-        feedback_s3_path = f"Proyecto/Evaluaciones/{user_id}/{session_id}_feedback.mp3"
+        feedback_s3_path = f"Evaluaciones/{user_id}/{session_id}_feedback.mp3"
         feedback_audio_url = _upload_audio_to_s3(feedback_bytes, feedback_s3_path)
     except Exception as e:
         logger.error(f"Error generando audio feedback: {e}")
@@ -344,7 +337,8 @@ def evaluate_and_finish():
         "status": "completed",
         "evaluation_text": evaluation_text,
         "evaluation_audio_url": feedback_audio_url,
-        "evaluation_score": evaluation_score
+        "evaluation_score": evaluation_score,
+        "evaluation_categories": evaluation_categories
     }), 200
 
 @interview_bp.route("/user/<user_id>/interviews", methods=["GET"])
