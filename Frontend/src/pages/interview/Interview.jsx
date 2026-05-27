@@ -55,7 +55,8 @@ export default function Interview() {
 
   /* ─── Audio URL Resolution ─────────────────────────────────────── */
   const constructAudioUrl = useCallback((uid, sid, index) => {
-    const BASE = import.meta.env.VITE_STORAGE_BASE_URL;
+    const BASE =
+      import.meta.env.VITE_STORAGE_BASE_URL || "http://localhost:9000";
 
     if (!uid || !sid) return null;
 
