@@ -1,7 +1,6 @@
-/* global require, global */
 import { startInterview } from './api'
 
-const mockAuth = require('../../firebase').auth
+import { auth as mockAuth } from '../../firebase'
 
 jest.mock('../../firebase', () => ({
   auth: {
