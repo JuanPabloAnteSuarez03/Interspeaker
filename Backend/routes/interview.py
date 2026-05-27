@@ -42,25 +42,25 @@ def _upload_audio_to_s3(audio_bytes: bytes, s3_path: str) -> str:
     return f"{endpoint}/{BUCKET_NAME}/{s3_path}"
 
 def _background_tts_processing(user_id: str, session_id: str, questions_data: list, voice: str):
-    """Generar audios en segundo plano"""
+    """Generar audios en segundo plano - Actualización directa por campo"""
     try:
-        updated_questions = list(questions_data)
+        interview_ref = db.collection("users").document(user_id).collection("interviews").document(session_id)
         
-        for i in range(1, len(updated_questions)):
-            text_to_speak = updated_questions[i]["question_text"]
+        for i in range(1, len(questions_data)):
             try:
+                text_to_speak = questions_data[i]["question_text"]
                 audio_bytes = synthesize_speech(text=text_to_speak, voice=voice)
                 s3_path = f"AudioUsuarios/{user_id}/{session_id}/question_{i}.mp3"
                 audio_url = _upload_audio_to_s3(audio_bytes, s3_path)
-                updated_questions[i]["audio_url"] = audio_url
+
+                interview_ref.update({
+                    f"questions.{i}.audio_url": audio_url
+                })
+                
+                logger.info(f"Audio actualizado para pregunta {i} en sesión {session_id}")
                 
             except Exception as e:
                 logger.error(f"Error procesando pregunta {i}: {e}")
-        
-        interview_ref = db.collection("users").document(user_id).collection("interviews").document(session_id)
-        interview_ref.update({
-            "questions": updated_questions
-        })
         
         logger.info(f"TTS completado para sesión {session_id}")
         
