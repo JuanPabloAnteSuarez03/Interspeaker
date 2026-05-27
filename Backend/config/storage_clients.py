@@ -14,9 +14,12 @@ def get_db():
     try:
         if not firebase_admin._apps:
             service_account_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
-            
+            google_credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+
             if service_account_json:
                 cred = credentials.Certificate(json.loads(service_account_json))
+            elif google_credentials_path:
+                cred = credentials.Certificate(google_credentials_path)
             else:
                 BASE_DIR = Path(__file__).resolve().parent.parent
                 SERVICE_ACCOUNT_FILE = BASE_DIR / "interspeaker.json"
