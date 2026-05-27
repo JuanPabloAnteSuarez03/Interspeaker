@@ -29,22 +29,46 @@ def client(app):
 
 @pytest.fixture(autouse=True)
 def mock_firestore(monkeypatch):
-    mock_doc = MagicMock()
-    mock_doc.exists = True
-    mock_doc.to_dict.return_value = {
-        "questions": [],
-        "area": "backend",
-        "experience": "junior",
-    }
 
-    mock_document = MagicMock()
-    mock_document.get.return_value = mock_doc
-    mock_document.id = "test-session"
+    class FakeDoc:
+        exists = True
 
-    mock_collection = MagicMock()
-    mock_collection.document.return_value = mock_document
+        def __init__(self):
+            self.id = "test-session"
 
-    mock_db = MagicMock()
-    mock_db.collection.return_value = mock_collection
+        def get(self):
+            return self
 
-    monkeypatch.setattr("routes.interview.db", mock_db)
+        def set(self, *args, **kwargs):
+            pass
+
+        def update(self, *args, **kwargs):
+            pass
+
+        def to_dict(self):
+            return {
+                "questions": [],
+                "area": "backend",
+                "experience": "junior",
+            }
+
+    class FakeCollection:
+        def document(self, *args, **kwargs):
+            return FakeDoc()
+
+        def order_by(self, *args, **kwargs):
+            return self
+
+        def get(self):
+            return []
+
+    class FakeDB:
+        def collection(self, *args, **kwargs):
+            return FakeCollection()
+
+    monkeypatch.setattr("routes.interview.db", FakeDB())
+
+    monkeypatch.setattr(
+        "routes.interview.synthesize_speech",
+        lambda text, voice: b"fake-audio"
+    )
