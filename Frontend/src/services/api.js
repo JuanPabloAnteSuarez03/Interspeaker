@@ -1,3 +1,4 @@
+/* global process */
 import { auth } from '../../firebase'
 
 function getApiUrl() {

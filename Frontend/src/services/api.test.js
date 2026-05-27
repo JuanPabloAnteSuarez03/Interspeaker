@@ -1,3 +1,4 @@
+/* global require, global */
 import { startInterview } from './api'
 
 const mockAuth = require('../../firebase').auth
