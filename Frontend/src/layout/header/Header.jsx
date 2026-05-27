@@ -46,12 +46,6 @@ function Header() {
 
       {/* Acciones derecha */}
       <div className="header-actions">
-        <Link
-          to="/setup"
-          className={`nav-link${isActive('/setup') ? ' nav-link--active' : ''}`}
-        >
-          Perfil
-        </Link>
         {user && (
           <button className="btn-signout" onClick={handleSignOut}>
             Cerrar sesión

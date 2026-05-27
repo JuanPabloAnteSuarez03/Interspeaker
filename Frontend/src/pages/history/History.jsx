@@ -1,83 +1,77 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import './History.css'
-
-const SESSIONS = [
-  {
-    id: 1,
-    date: '15 May 2025',
-    area: 'Frontend',
-    level: 'Mid-Level',
-    score: 85,
-    duration: '18 min',
-    questions: 5,
-    badge: 'Excelente',
-    badgeType: 'excellent',
-    strengths: ['Hooks de React', 'Método STAR'],
-    improvement: 'Optimización con useMemo',
-  },
-  {
-    id: 2,
-    date: '10 May 2025',
-    area: 'Frontend',
-    level: 'Mid-Level',
-    score: 72,
-    duration: '22 min',
-    questions: 5,
-    badge: 'Buen intento',
-    badgeType: 'good',
-    strengths: ['CSS avanzado', 'Accesibilidad'],
-    improvement: 'Arquitectura de componentes',
-  },
-  {
-    id: 3,
-    date: '3 May 2025',
-    area: 'Backend',
-    level: 'Junior',
-    score: 61,
-    duration: '15 min',
-    questions: 4,
-    badge: 'A mejorar',
-    badgeType: 'improve',
-    strengths: ['REST APIs'],
-    improvement: 'Base de datos y joins SQL',
-  },
-  {
-    id: 4,
-    date: '24 Abr 2025',
-    area: 'Full Stack',
-    level: 'Senior',
-    score: 91,
-    duration: '25 min',
-    questions: 6,
-    badge: 'Sobresaliente',
-    badgeType: 'excellent',
-    strengths: ['Arquitectura', 'Liderazgo técnico'],
-    improvement: 'Métricas de rendimiento',
-  },
-]
-
-const STATS = {
-  total: 4,
-  avgScore: 77,
-  bestScore: 91,
-  totalTime: '80 min',
-}
+import * as api from '../../services/api'
 
 export default function History() {
+  const [interviews, setInterviews] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [expanded, setExpanded] = useState(null)
+
+  useEffect(() => {
+    loadInterviews()
+  }, [])
+
+  const loadInterviews = async () => {
+    try {
+      const data = await api.getUserInterviews()
+      setInterviews(data.interviews || [])
+    } catch (err) {
+      console.error('Error loading interviews:', err)
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="hs-wrapper">
+        <div className="hs-container">
+          <div style={{ textAlign: 'center', padding: '2rem' }}>
+            <div className="iv-spinner" style={{ margin: '0 auto' }} />
+            <p style={{ marginTop: '1rem', color: '#94a3b8' }}>Cargando historial...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const stats = {
+    total: interviews.length,
+    avgScore: interviews.length > 0 
+      ? Math.round(interviews.reduce((sum, i) => sum + (i.score || 0), 0) / interviews.length) 
+      : 0,
+    bestScore: interviews.length > 0 
+      ? Math.max(...interviews.map(i => i.score || 0)) 
+      : 0,
+  }
+
+  const getScoreBadge = (score) => {
+    if (score >= 90) return { label: 'Sobresaliente', type: 'excellent' }
+    if (score >= 80) return { label: 'Excelente', type: 'excellent' }
+    if (score >= 70) return { label: 'Buen intento', type: 'good' }
+    if (score >= 60) return { label: 'A mejorar', type: 'improve' }
+    return { label: 'Necesitas mejorar', type: 'poor' }
+  }
+
+  const formatDate = (timestamp) => {
+    if (!timestamp) return 'N/A'
+    const date = new Date(timestamp.seconds ? timestamp.seconds * 1000 : timestamp)
+    return date.toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' })
+  }
 
   return (
     <div className="hs-wrapper">
       <div className="hs-container">
-
         {/* Header */}
         <div className="hs-header">
           <div>
             <h1 className="hs-title">Historial de entrevistas</h1>
             <p className="hs-subtitle">Revisa tu progreso y evolución en cada sesión.</p>
           </div>
-          <Link to="/setup" className="hs-new-btn">
+          <Link to="/interview" className="hs-new-btn">
             + Nueva entrevista
           </Link>
         </div>
@@ -85,10 +79,9 @@ export default function History() {
         {/* Stats row */}
         <div className="hs-stats-row">
           {[
-            { label: 'Sesiones totales', value: STATS.total,     icon: '🎤' },
-            { label: 'Puntuación media', value: `${STATS.avgScore}/100`, icon: '📊' },
-            { label: 'Mejor puntuación', value: `${STATS.bestScore}/100`, icon: '🏆' },
-            { label: 'Tiempo practicado', value: STATS.totalTime, icon: '⏱️' },
+            { label: 'Sesiones totales', value: stats.total, icon: '🎤' },
+            { label: 'Puntuación media', value: `${stats.avgScore}/100`, icon: '📊' },
+            { label: 'Mejor puntuación', value: `${stats.bestScore}/100`, icon: '🏆' },
           ].map((s) => (
             <div key={s.label} className="hs-stat-card">
               <span className="hs-stat-icon">{s.icon}</span>
@@ -100,63 +93,72 @@ export default function History() {
 
         {/* Session list */}
         <div className="hs-list">
-          {SESSIONS.map((s) => {
-            const isOpen = expanded === s.id
-            return (
-              <div key={s.id} className={`hs-session-card ${isOpen ? 'hs-session-card--open' : ''}`}>
-                <button className="hs-session-header" onClick={() => setExpanded(isOpen ? null : s.id)}>
-                  <div className="hs-session-left">
-                    <ScoreRing score={s.score} type={s.badgeType} />
-                    <div>
-                      <div className="hs-session-title">{s.area} · {s.level}</div>
-                      <div className="hs-session-meta">{s.date} · {s.duration} · {s.questions} preguntas</div>
+          {error ? (
+            <div style={{ color: '#dc2626', textAlign: 'center', padding: '2rem' }}>
+              {error}
+            </div>
+          ) : interviews.length === 0 ? (
+            <div style={{ color: '#94a3b8', textAlign: 'center', padding: '2rem' }}>
+              <p>Aún no tienes sesiones registradas.</p>
+              <Link to="/interview" className="hs-new-btn" style={{ marginTop: '1rem', display: 'inline-block' }}>
+                Comenzar primera entrevista
+              </Link>
+            </div>
+          ) : (
+            interviews.map((interview) => {
+              const isOpen = expanded === interview.session_id
+              const badge = getScoreBadge(interview.score || 0)
+              return (
+                <div key={interview.session_id} className={`hs-session-card ${isOpen ? 'hs-session-card--open' : ''}`}>
+                  <button className="hs-session-header" onClick={() => setExpanded(isOpen ? null : interview.session_id)}>
+                    <div className="hs-session-left">
+                      <ScoreRing score={interview.score || 0} type={badge.type} />
+                      <div>
+                        <div className="hs-session-title">{interview.area} · {interview.experience}</div>
+                        <div className="hs-session-meta">{formatDate(interview.created_at)} · {interview.answered_questions}/{interview.total_questions} preguntas</div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="hs-session-right">
-                    <span className={`hs-badge hs-badge--${s.badgeType}`}>{s.badge}</span>
-                    <svg
-                      width="16" height="16" viewBox="0 0 24 24" fill="none"
-                      className={`hs-chevron ${isOpen ? 'hs-chevron--open' : ''}`}
-                    >
-                      <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
-                  </div>
-                </button>
+                    <div className="hs-session-right">
+                      <span className={`hs-badge hs-badge--${badge.type}`}>{badge.label}</span>
+                      <svg
+                        width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        className={`hs-chevron ${isOpen ? 'hs-chevron--open' : ''}`}
+                      >
+                        <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      </svg>
+                    </div>
+                  </button>
 
-                {isOpen && (
-                  <div className="hs-session-body">
-                    <div className="hs-detail-grid">
-                      <div className="hs-detail-block">
-                        <p className="hs-detail-label">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                            <circle cx="12" cy="12" r="10" stroke="#059669" strokeWidth="1.8"/>
-                            <path d="M8 12l3 3 5-5" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                          Fortalezas
-                        </p>
-                        <ul className="hs-detail-list">
-                          {s.strengths.map((t) => <li key={t}>{t}</li>)}
-                        </ul>
-                      </div>
-                      <div className="hs-detail-block">
-                        <p className="hs-detail-label">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                            <circle cx="12" cy="12" r="10" stroke="#d97706" strokeWidth="1.8"/>
-                            <path d="M12 8v4M12 16h.01" stroke="#d97706" strokeWidth="1.8" strokeLinecap="round"/>
-                          </svg>
-                          A mejorar
-                        </p>
-                        <ul className="hs-detail-list">
-                          <li>{s.improvement}</li>
-                        </ul>
+                  {isOpen && (
+                    <div className="hs-session-body">
+                      <div className="hs-detail-grid">
+                        <div className="hs-detail-block">
+                          <p className="hs-detail-label">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                              <circle cx="12" cy="12" r="10" stroke="#059669" strokeWidth="1.8"/>
+                              <path d="M8 12l3 3 5-5" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            Estado
+                          </p>
+                          <p className="hs-detail-text">{interview.status === 'completed' ? 'Completada' : 'En progreso'}</p>
+                        </div>
+                        <div className="hs-detail-block">
+                          <p className="hs-detail-label">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                              <circle cx="12" cy="12" r="10" stroke="#d97706" strokeWidth="1.8"/>
+                              <path d="M12 8v4M12 16h.01" stroke="#d97706" strokeWidth="1.8" strokeLinecap="round"/>
+                            </svg>
+                            Puntuación
+                          </p>
+                          <p className="hs-detail-text">{interview.score || 'N/A'}/100</p>
+                        </div>
                       </div>
                     </div>
-                    <Link to="/results" className="hs-view-report">Ver reporte completo →</Link>
-                  </div>
-                )}
-              </div>
-            )
-          })}
+                  )}
+                </div>
+              )
+            })
+          )}
         </div>
 
       </div>

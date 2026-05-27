@@ -10,7 +10,7 @@ def synthesize():
     """Convierte texto en audio MP3 (entrevistador)."""
     data = request.get_json(silent=True) or {}
     text = data.get("text")
-    voice = data.get("voice", "es-ES-Standard-A")
+    voice = data.get("voice", "aura-2-diana-es")
 
     if not text:
         return jsonify({"error": "Falta el campo 'text'"}), 400

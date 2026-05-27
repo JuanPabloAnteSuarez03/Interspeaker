@@ -8,13 +8,24 @@ export default [
   {
     files: ['**/__tests__/**/*.{js,jsx}', '**/*.test.{js,jsx}'],
     languageOptions: {
-      globals: { ...globals.browser, ...globals.jest },
+      globals: { ...globals.browser, ...globals.jest, ...globals.node },
     },
   },
   {
     files: ['src/setupTests.js'],
     languageOptions: {
       globals: { ...globals.browser, ...globals.jest, ...globals.node },
+    },
+  },
+  {
+    files: ['src/services/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      globals: { ...globals.browser, ...globals.node },
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+      },
     },
   },
   {
