@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import "./Interview.css";
 import * as api from "../../services/api";
 import { auth } from "../../../firebase";
-import { STORAGE_BASE_URL } from "../../config/env";
 
 const LEVELS = ["Sin experiencia", "1 - 2 años", "3 - 5 años", "6+ años"];
 const EXPERIENCE_MAP = {
@@ -58,7 +57,7 @@ export default function Interview() {
   const constructAudioUrl = useCallback((uid, sid, index) => {
     if (!uid || !sid) return null;
 
-    return `${STORAGE_BASE_URL}/interspeaker/AudioUsuarios/${uid}/${sid}/question_${index}.mp3`;
+    return `https://pub-7ab91183bd8847ea812388b1bdb788d4.r2.dev/interspeaker/AudioUsuarios/${uid}/${sid}/question_${index}.mp3`;
   }, []);
 
   const pollAudioUrl = useCallback(

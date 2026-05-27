@@ -8,7 +8,8 @@ export default function Results() {
   const [interview, setInterview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const BASE = import.meta.env.VITE_STORAGE_BASE_URL || "http://localhost:9000";
+  const BASE =
+    "https://pub-7ab91183bd8847ea812388b1bdb788d4.r2.dev/interspeaker";
 
   const normalizeAudioUrl = (url) => {
     if (!url) return null;
