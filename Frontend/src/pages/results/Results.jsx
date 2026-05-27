@@ -9,6 +9,21 @@ export default function Results() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const normalizeAudioUrl = (url) => {
+    if (!url) return null;
+
+    // caso bug backend
+    if (url.startsWith("None/")) {
+      url = url.replace("None/", "");
+    }
+
+    // si ya es correcta
+    if (url.startsWith("http")) return url;
+
+    // fallback (tu servidor MinIO/local)
+    return `http://localhost:9000/${url}`;
+  };
+
   useEffect(() => {
     if (!sessionId) {
       setLoading(false);
@@ -118,7 +133,10 @@ export default function Results() {
   const totalQuestions = interview?.total_questions ?? 0;
   const answeredQuestions = interview?.answered_questions ?? 0;
   const evaluationText = interview?.evaluation_text || "";
-  const audioUrl = interview?.evaluation_audio_url;
+  const audioUrl = normalizeAudioUrl(interview?.evaluation_audio_url);
+
+  const isValidAudioUrl = (url) =>
+    url && url.startsWith("http") && !url.includes("None/");
 
   const progress =
     totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0;
@@ -281,7 +299,7 @@ export default function Results() {
                 width: "100%",
               }}
             >
-              {answeredQuestions > 0 && audioUrl && (
+              {answeredQuestions > 0 && isValidAudioUrl(audioUrl) && (
                 <div
                   style={{
                     background: "#f8fafc",
