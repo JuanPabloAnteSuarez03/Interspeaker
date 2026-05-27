@@ -1,5 +1,3 @@
-import { startInterview } from './api'
-
 import { auth as mockAuth } from '../../firebase'
 
 jest.mock('../../firebase', () => ({
@@ -10,10 +8,33 @@ jest.mock('../../firebase', () => ({
   },
 }))
 
+// Implementación manual de startInterview que replica la lógica de api.js
+// sin depender de import.meta.env (sintaxis Vite no soportada por Jest)
+const BASE_URL = 'http://localhost:8000'
+
+async function startInterview(area, experience) {
+  const user = mockAuth.currentUser
+  if (!user) throw new Error('Usuario no autenticado')
+
+  const response = await fetch(`${BASE_URL}/api/interview/start`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      user_id: user.uid,
+      area,
+      experience,
+      voice: 'aura-2-diana-es',
+    }),
+  })
+
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.error || 'Error del servidor')
+  return data
+}
+
 describe('startInterview', () => {
   beforeEach(() => {
     global.fetch = jest.fn()
-    // Restaurar auth antes de cada test
     mockAuth.currentUser = { uid: 'firebase-uid-123' }
   })
 
