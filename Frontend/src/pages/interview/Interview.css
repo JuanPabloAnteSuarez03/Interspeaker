@@ -497,6 +497,17 @@
   animation: none;
 }
 
+.iv-mic-btn--final {
+  background: #dc2626;
+  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4);
+}
+
+.iv-mic-btn--final:hover:not(:disabled) {
+  background: #b91c1c;
+  transform: scale(1.09);
+  box-shadow: 0 6px 28px rgba(220, 38, 38, 0.5);
+}
+
 .iv-mic-label {
   font-size: 0.65rem;
   font-weight: 800;
