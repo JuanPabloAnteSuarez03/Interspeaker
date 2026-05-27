@@ -132,13 +132,15 @@ def evaluate_interview_full(area: str, experience: str, qa_pairs: List[Dict[str,
     )
 
     prompt = (
-        f"Por favor, evalúa el desempeño del candidato para el área de {area} con la experiencia de: {experience}.\n\n"
-        f"A continuación tienes el registro de las preguntas realizadas y las respuestas del candidato:\n"
+        f"Evalúa críticamente el desempeño técnico del candidato para el área de {area} ({experience}).\n\n"
+        f"Historial de la entrevista:\n"
         f"{conversation_history}\n"
-        f"Instrucciones de formato para el Feedback:\n"
-        f"1. Debes redactar la respuesta en primera persona, hablándole directamente al candidato (ej. 'Has demostrado...').\n"
-        f"2. Sé conciso pero sumamente profesional. Destaca al menos un punto fuerte técnico y una oportunidad de mejora.\n"
-        f"3. IMPORTANTE: Este texto será procesado por un sistema de texto a voz (TTS), por lo tanto, EVITA usar viñetas, asteriscos, guiones, formatos Markdown u tablas. Escribe exclusivamente en párrafos limpios y continuos."
+        f"Instrucciones estrictas de evaluación y formato:\n"
+        f"1. Dirígete directamente al candidato en primera persona.\n"
+        f"2. Sé ultra-conciso. Dictamina de inmediato qué competencias técnicas demostró y qué errores conceptuales específicos cometió, ayudando al usuario a mejorar su desempeño.\n"
+        f"3. LIMITACIÓN DE EXTENSIÓN: La respuesta total debe tener un límite estricto de menos de 1800 caracteres totales.\n"
+        f"4. OBLIGATORIO PARA TTS: Genera la salida exclusivamente en párrafos limpios y continuos. "
+        f"Está estrictamente prohibido usar viñetas, asteriscos, guiones, subtítulos o cualquier formato Markdown."
     )
 
     try:
