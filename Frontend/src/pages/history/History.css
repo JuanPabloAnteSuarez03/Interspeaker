@@ -73,6 +73,16 @@
   margin-bottom: 28px;
 }
 
+.hs-stats-row {
+  display: flex;
+  justify-content: center;
+}
+
+.hs-stat-card {
+  max-width: 280px;
+  width: 100%;
+}
+
 .hs-stat-card {
   background: #fff;
   border: 1px solid #e2e8f0;
@@ -127,6 +137,13 @@
 .hs-session-card--open {
   box-shadow: 0 6px 24px rgba(30,58,138,0.08);
   border-color: #bfdbfe;
+}
+
+
+
+.hs-results-btn:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
 }
 
 /* ===== SESSION HEADER ===== */
