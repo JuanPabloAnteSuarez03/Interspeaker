@@ -12,6 +12,8 @@ os.environ.setdefault("TESTING", "1")
 
 from app import create_app
 
+from unittest.mock import MagicMock
+
 
 @pytest.fixture
 def app():
@@ -23,3 +25,26 @@ def app():
 @pytest.fixture
 def client(app):
     return app.test_client()
+
+
+@pytest.fixture(autouse=True)
+def mock_firestore(monkeypatch):
+    mock_doc = MagicMock()
+    mock_doc.exists = True
+    mock_doc.to_dict.return_value = {
+        "questions": [],
+        "area": "backend",
+        "experience": "junior",
+    }
+
+    mock_document = MagicMock()
+    mock_document.get.return_value = mock_doc
+    mock_document.id = "test-session"
+
+    mock_collection = MagicMock()
+    mock_collection.document.return_value = mock_document
+
+    mock_db = MagicMock()
+    mock_db.collection.return_value = mock_collection
+
+    monkeypatch.setattr("routes.interview.db", mock_db)
