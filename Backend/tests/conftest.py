@@ -52,6 +52,10 @@ def mock_firestore(monkeypatch):
                 "experience": "junior",
             }
 
+        def collection(self, *args, **kwargs):
+            """Allow calling collection on a document reference"""
+            return FakeCollection()
+
     class FakeCollection:
         def document(self, *args, **kwargs):
             return FakeDoc()
