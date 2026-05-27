@@ -1,8 +1,13 @@
 import { auth } from '../../firebase'
 
 function getApiUrl() {
+  // Vite expone variables cliente en import.meta.env (build/runtime web)
+  if (import.meta?.env?.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL
+  }
+
   // En Jest/Node, process.env estará disponible
-  if (typeof process !== 'undefined' && process.env && process.env.VITE_API_URL) {
+  if (typeof process !== 'undefined' && process.env?.VITE_API_URL) {
     return process.env.VITE_API_URL
   }
   return 'http://localhost:5001'
