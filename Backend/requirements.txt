@@ -10,6 +10,7 @@ boto3==1.43.14
 botocore==1.43.14
 google-cloud==0.34.0
 google-cloud-firestore==2.27.0
+firebase_admin==7.4.0
 
 deepgram-sdk==3.2.7
 
