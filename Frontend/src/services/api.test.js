@@ -1,5 +1,6 @@
 import { startInterview } from './api'
-import { auth } from '../../firebase'
+
+import { auth as mockAuth } from '../../firebase'
 
 jest.mock('../../firebase', () => ({
   auth: {
@@ -9,38 +10,67 @@ jest.mock('../../firebase', () => ({
   },
 }))
 
-describe('api session identity', () => {
+describe('startInterview', () => {
   beforeEach(() => {
     global.fetch = jest.fn()
+    // Restaurar auth antes de cada test
+    mockAuth.currentUser = { uid: 'firebase-uid-123' }
   })
 
   afterEach(() => {
     jest.restoreAllMocks()
   })
 
-  test('sends Firebase UID as user_id and request header', async () => {
+  test('sends user_id, area, experience and voice in request body', async () => {
+    const mockResponse = {
+      session_id: 'session-123',
+      question: 'Tell me about your experience with React',
+      audio_path: '/path/to/audio.wav',
+    }
+
     global.fetch.mockResolvedValue({
       ok: true,
-      json: async () => ({ question: 'ok' }),
+      json: async () => mockResponse,
     })
 
-    await startInterview('frontend', 'senior')
+    const result = await startInterview('frontend', 'senior')
 
-    expect(auth.currentUser.uid).toBe('firebase-uid-123')
     expect(global.fetch).toHaveBeenCalledWith(
       expect.stringContaining('/api/interview/start'),
       expect.objectContaining({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Firebase-UID': 'firebase-uid-123',
         },
         body: JSON.stringify({
-          area: 'frontend',
-          level: 'senior',
           user_id: 'firebase-uid-123',
+          area: 'frontend',
+          experience: 'senior',
+          voice: 'aura-2-diana-es',
         }),
       }),
+    )
+
+    expect(result).toEqual(mockResponse)
+  })
+
+  test('throws error when user is not authenticated', async () => {
+    mockAuth.currentUser = null
+
+    await expect(startInterview('frontend', 'senior')).rejects.toThrow(
+      'Usuario no autenticado',
+    )
+    expect(global.fetch).not.toHaveBeenCalled()
+  })
+
+  test('throws error when server returns error response', async () => {
+    global.fetch.mockResolvedValue({
+      ok: false,
+      json: async () => ({ error: 'Invalid area' }),
+    })
+
+    await expect(startInterview('invalid', 'senior')).rejects.toThrow(
+      'Invalid area',
     )
   })
 })

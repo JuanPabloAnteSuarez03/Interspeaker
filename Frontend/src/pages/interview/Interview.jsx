@@ -35,7 +35,6 @@ export default function Interview() {
   const [userId, setUserId] = useState(null)
   const [questions, setQuestions] = useState([])
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [currentAudioUrl, setCurrentAudioUrl] = useState(null)
   const [audioUrls, setAudioUrls] = useState({}) // Mapeo: index -> audioUrl
   const [phase, setPhase] = useState('listening')
   const [recording, setRecording] = useState(false)
@@ -74,7 +73,7 @@ export default function Interview() {
             resolve(audioUrl)
             return
           }
-        } catch (err) {
+        } catch {
           // URL no disponible aún
         }
         

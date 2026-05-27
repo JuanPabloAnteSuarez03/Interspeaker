@@ -6,12 +6,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-iniciaFirestore = os.getenv("FLASK_ENV") == "production"
-
-if iniciaFirestore:
+# Initialize Firestore with error handling for test environments
+try:
     db = firestore.Client()
-else:
-    db = "No existe"
+except Exception as e:
+    # In testing environments without credentials, use a None placeholder
+    if os.getenv("TESTING"):
+        db = None
+    else:
+        raise
 
 s3_client = boto3.client(
     "s3",
