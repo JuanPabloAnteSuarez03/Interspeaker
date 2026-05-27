@@ -48,16 +48,27 @@ def _background_tts_processing(user_id: str, session_id: str, questions_data: li
         
         for i in range(1, len(questions_data)):
             try:
+                # Generar audio
                 text_to_speak = questions_data[i]["question_text"]
                 audio_bytes = synthesize_speech(text=text_to_speak, voice=voice)
                 s3_path = f"AudioUsuarios/{user_id}/{session_id}/question_{i}.mp3"
                 audio_url = _upload_audio_to_s3(audio_bytes, s3_path)
-
-                interview_ref.update({
-                    f"questions.{i}.audio_url": audio_url
-                })
                 
-                logger.info(f"Audio actualizado para pregunta {i} en sesión {session_id}")
+                # Leer el documento actual para obtener la pregunta completa
+                doc = interview_ref.get()
+                if doc.exists:
+                    current_questions = doc.to_dict().get("questions", [])
+                    
+                    if i < len(current_questions):
+                        # Preservar todos los campos existentes y solo actualizar audio_url
+                        current_questions[i]["audio_url"] = audio_url
+                        
+                        # Actualizar todo el array (es la única forma segura)
+                        interview_ref.update({
+                            "questions": current_questions
+                        })
+                        
+                        logger.info(f"Audio actualizado para pregunta {i} en sesión {session_id}")
                 
             except Exception as e:
                 logger.error(f"Error procesando pregunta {i}: {e}")
